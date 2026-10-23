@@ -404,30 +404,37 @@
         let failovers = 0;
         const history = [];
 
-        async function checkService(url, elementId) {
-            const element = document.getElementById(elementId);
 
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error("Service unavailable");
+function updateServiceStatus(isOnline, elementId) {
+    const element = document.getElementById(elementId);
 
-                element.className = "status online";
-                element.innerHTML =
-                    '<span class="dot"></span> Online';
-            } catch {
-                element.className = "status offline";
-                element.innerHTML =
-                    '<span class="dot"></span> Offline';
-            }
+    element.className = isOnline ? "status online" : "status offline";
+    element.innerHTML = isOnline
+        ? '<span class="dot"></span> Online'
+        : '<span class="dot"></span> Offline';
+}
+
+async function checkAllServices() {
+    try {
+        const response = await fetch("/api/status");
+
+        if (!response.ok) {
+            throw new Error("Unable to retrieve service status");
         }
 
-        async function checkAllServices() {
-            await Promise.all([
-                checkService("http://127.0.0.1:5000/", "originStatus"),
-                checkService("http://127.0.0.1:5001/", "node1Status"),
-                checkService("http://127.0.0.1:5002/", "node2Status")
-            ]);
-        }
+        const status = await response.json();
+
+        updateServiceStatus(status.origin, "originStatus");
+        updateServiceStatus(status.edge_node_1, "node1Status");
+        updateServiceStatus(status.edge_node_2, "node2Status");
+    } catch (error) {
+        updateServiceStatus(false, "originStatus");
+        updateServiceStatus(false, "node1Status");
+        updateServiceStatus(false, "node2Status");
+    }
+}
+
+
 
         async function fetchContent() {
             const button = document.getElementById("fetchButton");
