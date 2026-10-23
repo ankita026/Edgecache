@@ -2,10 +2,16 @@
 from flask import Flask, jsonify
 import requests
 import time
+import os
 
 app = Flask(__name__)
 
-ORIGIN_URL = "http://127.0.0.1:5000"
+# Use the deployed origin URL on Render,
+# or localhost when running the project locally.
+ORIGIN_URL = os.environ.get(
+    "ORIGIN_URL",
+    "http://127.0.0.1:5000"
+).rstrip("/")
 
 # Local cache stored inside this edge node
 cache = {}
@@ -67,7 +73,6 @@ def get_content(content_id):
         }), 503
 
 
-
 @app.route("/cache/clear", methods=["POST"])
 def clear_cache():
     cleared_items = len(cache)
@@ -79,5 +84,7 @@ def clear_cache():
         "cleared_items": cleared_items
     })
 
+
 if __name__ == "__main__":
-    app.run(port=5001, debug=True)
+    port = int(os.environ.get("PORT", 5001))
+    app.run(host="0.0.0.0", port=port, debug=False)
