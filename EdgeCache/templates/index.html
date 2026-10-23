@@ -1,0 +1,585 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EdgeCache | Distributed CDN</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #0b0b12;
+            color: #f4f3ff;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 22px 6%;
+            border-bottom: 1px solid #252439;
+            background: #10101a;
+        }
+
+        .brand {
+            font-size: 25px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .brand span {
+            color: #a78bfa;
+        }
+
+        .header-label {
+            color: #aaa7c4;
+            font-size: 12px;
+            letter-spacing: 2px;
+        }
+
+        main {
+            width: 88%;
+            max-width: 1200px;
+            margin: 38px auto;
+        }
+
+        .eyebrow {
+            color: #a78bfa;
+            font-size: 12px;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: clamp(30px, 5vw, 48px);
+            letter-spacing: -1.5px;
+        }
+
+        .subtitle {
+            color: #a6a4bc;
+            margin-top: 12px;
+            line-height: 1.7;
+        }
+
+        .section-title {
+            font-size: 17px;
+            margin: 34px 0 16px;
+        }
+
+        .services {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .panel {
+            background: #141420;
+            border: 1px solid #29273e;
+            border-radius: 15px;
+            padding: 22px;
+        }
+
+        .service-name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .service-port {
+            color: #9996b4;
+            font-size: 12px;
+            margin-top: 7px;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 20px;
+            color: #fbbf24;
+            font-size: 12px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .online {
+            color: #4ade80;
+        }
+
+        .offline {
+            color: #fb7185;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 16px;
+        }
+
+        .panel h2 {
+            font-size: 18px;
+            margin-bottom: 9px;
+        }
+
+        .muted {
+            color: #a6a4bc;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        select, button {
+            font: inherit;
+            border-radius: 9px;
+            padding: 12px 14px;
+        }
+
+        select {
+            width: 100%;
+            margin: 20px 0 12px;
+            background: #0e0e18;
+            color: #f4f3ff;
+            border: 1px solid #393551;
+        }
+
+        button {
+            border: 0;
+            background: #8b5cf6;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #a78bfa;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .result {
+            margin-top: 18px;
+            background: #0d0d17;
+            border: 1px solid #302b49;
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 90px;
+            overflow-wrap: anywhere;
+        }
+
+        .result-title {
+            font-size: 12px;
+            color: #a78bfa;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .result-message {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .stat-value {
+            font-size: 25px;
+            font-weight: 800;
+            margin-top: 10px;
+        }
+
+        .stat-label {
+            color: #a6a4bc;
+            font-size: 12px;
+        }
+
+        .history {
+            margin-top: 16px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 460px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 13px 10px;
+            border-bottom: 1px solid #29273e;
+        }
+
+        th {
+            color: #aaa7c4;
+            font-weight: 500;
+        }
+
+        td {
+            color: #e9e7ff;
+        }
+
+        footer {
+            text-align: center;
+            padding: 28px 10px;
+            color: #77758f;
+            font-size: 12px;
+        }
+
+        @media (max-width: 760px) {
+            header {
+                padding: 18px 5%;
+            }
+
+            main {
+                width: 90%;
+                margin-top: 28px;
+            }
+
+            .services, .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="brand">Edge<span>Cache</span></div>
+        <div class="header-label">DISTRIBUTED CDN SIMULATOR</div>
+    </header>
+
+    <main>
+        <div class="eyebrow">DISTRIBUTED SYSTEMS / PROJECT 01</div>
+        <h1>Content, closer to you.</h1>
+        <p class="subtitle">
+            A distributed caching simulator with load balancing,
+            cache management, and fault-tolerant routing.
+        </p>
+
+        <h2 class="section-title">Infrastructure overview</h2>
+
+        <div class="services">
+            <div class="panel">
+                <div class="service-name">Origin Server</div>
+                <div class="service-port">Port 5000 · Source of truth</div>
+                <div class="status" id="originStatus">
+                    <span class="dot"></span> Checking...
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="service-name">Edge Node 01</div>
+                <div class="service-port">Port 5001 · Cache instance</div>
+                <div class="status" id="node1Status">
+                    <span class="dot"></span> Checking...
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="service-name">Edge Node 02</div>
+                <div class="service-port">Port 5002 · Cache instance</div>
+                <div class="status" id="node2Status">
+                    <span class="dot"></span> Checking...
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Request console</h2>
+
+        <div class="workspace">
+            <div class="panel">
+                <h2>Fetch content</h2>
+                <p class="muted">
+                    Send a request through the router. Observe load balancing,
+                    cache HIT/MISS results, and failover.
+                </p>
+
+                <select id="contentSelect">
+                    <option value="dcs">Distributed Computing Systems</option>
+                    <option value="welcome">Welcome to EdgeCache</option>
+                </select>
+
+                <button id="fetchButton" onclick="fetchContent()">
+                    Run request →
+                </button>
+
+                <button id="clearCacheButton"
+                        onclick="clearAllCaches()"
+                        style="margin-top: 12px; background: #292342;">
+                    Clear All Caches
+                </button>
+
+                <div class="result" id="result">
+                    <div class="result-title">AWAITING REQUEST</div>
+                    <div class="result-message">
+                        Choose content and run your first request.
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Runtime metrics</h2>
+                <p class="muted">
+                    Statistics collected by this dashboard during the
+                    current browser session.
+                </p>
+
+                <div class="stats">
+                    <div>
+                        <div class="stat-label">Total requests</div>
+                        <div class="stat-value" id="totalRequests">0</div>
+                    </div>
+                    <div>
+                        <div class="stat-label">Cache hits</div>
+                        <div class="stat-value" id="cacheHits">0</div>
+                    </div>
+                    <div>
+                        <div class="stat-label">Failovers</div>
+                        <div class="stat-value" id="failovers">0</div>
+                    </div>
+                </div>
+
+                <div class="result">
+                    <div class="result-title">ROUTING STRATEGY</div>
+                    <div class="result-message">
+                        Round-robin distribution with sequential failover.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Recent requests</h2>
+        <div class="panel history">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Content</th>
+                        <th>Edge node</th>
+                        <th>Cache</th>
+                        <th>Failover</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody">
+                    <tr>
+                        <td colspan="5">No requests yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer>
+        EdgeCache · Distributed Computing Systems Mini Project
+    </footer>
+
+    <script>
+        let totalRequests = 0;
+        let cacheHits = 0;
+        let failovers = 0;
+        const history = [];
+
+        async function checkService(url, elementId) {
+            const element = document.getElementById(elementId);
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Service unavailable");
+
+                element.className = "status online";
+                element.innerHTML =
+                    '<span class="dot"></span> Online';
+            } catch {
+                element.className = "status offline";
+                element.innerHTML =
+                    '<span class="dot"></span> Offline';
+            }
+        }
+
+        async function checkAllServices() {
+            await Promise.all([
+                checkService("http://127.0.0.1:5000/", "originStatus"),
+                checkService("http://127.0.0.1:5001/", "node1Status"),
+                checkService("http://127.0.0.1:5002/", "node2Status")
+            ]);
+        }
+
+        async function fetchContent() {
+            const button = document.getElementById("fetchButton");
+            const contentId =
+                document.getElementById("contentSelect").value;
+            const result = document.getElementById("result");
+
+            button.disabled = true;
+            button.textContent = "Sending request...";
+
+            try {
+                const response = await fetch(
+                    `/content/${contentId}`
+                );
+                const payload = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        payload.error || "Request failed"
+                    );
+                }
+
+                const data = payload.result;
+                const content = data.data.content;
+                const cacheStatus = data.cache_status || "N/A";
+                const nodeName = data.edge_node || "Unknown node";
+                const usedFailover = payload.failover_used === true;
+
+                totalRequests++;
+
+                if (cacheStatus === "HIT") cacheHits++;
+                if (usedFailover) failovers++;
+
+                document.getElementById("totalRequests").textContent =
+                    totalRequests;
+                document.getElementById("cacheHits").textContent =
+                    cacheHits;
+                document.getElementById("failovers").textContent =
+                    failovers;
+
+                result.innerHTML = `
+                    <div class="result-title">
+                        REQUEST SUCCESSFUL · ${cacheStatus}
+                    </div>
+                    <div class="result-message">
+                        <strong>${content.title}</strong><br>
+                        ${content.message}<br><br>
+                        Edge node: ${nodeName}<br>
+                        Cache: ${cacheStatus}<br>
+                        Failover used: ${usedFailover ? "Yes" : "No"}
+                    </div>
+                `;
+
+                history.unshift({
+                    time: new Date().toLocaleTimeString(),
+                    content: contentId,
+                    node: nodeName,
+                    cache: cacheStatus,
+                    failover: usedFailover ? "Yes" : "No"
+                });
+
+                history.splice(8);
+
+                document.getElementById("historyBody").innerHTML =
+                    history.map(item => `
+                        <tr>
+                            <td>${item.time}</td>
+                            <td>${item.content}</td>
+                            <td>${item.node}</td>
+                            <td>${item.cache}</td>
+                            <td>${item.failover}</td>
+                        </tr>
+                    `).join("");
+
+                await checkAllServices();
+
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="result-title">REQUEST FAILED</div>
+                    <div class="result-message">
+                        ${error.message}<br>
+                        Check that the router and edge nodes are running.
+                    </div>
+                `;
+                await checkAllServices();
+            } finally {
+                button.disabled = false;
+                button.textContent = "Run request →";
+            }
+        }
+
+        async function clearAllCaches() {
+            const button = document.getElementById("clearCacheButton");
+            const result = document.getElementById("result");
+
+            button.disabled = true;
+            button.textContent = "Clearing caches...";
+
+            try {
+                const response = await fetch("/cache/clear", {
+                    method: "POST"
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    const failedNodes = (data.results || [])
+                        .filter(item => !item.success)
+                        .map(item => item.node)
+                        .join(", ");
+
+                    throw new Error(
+                        (data.message || "Unable to clear all caches") +
+                        (failedNodes ? ": " + failedNodes : "")
+                    );
+                }
+
+                const clearedItems = (data.results || [])
+                    .reduce((sum, item) => {
+                        const details = item.details || {};
+                        return sum + (details.cleared_items || 0);
+                    }, 0);
+
+                result.innerHTML = `
+                    <div class="result-title">CACHE INVALIDATION COMPLETE</div>
+                    <div class="result-message">
+                        ${data.message}.<br>
+                        Cached entries removed: ${clearedItems}.<br><br>
+                        Run the next request to observe a cache MISS on the
+                        node selected by the router.
+                    </div>
+                `;
+
+                await checkAllServices();
+
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="result-title">CACHE CLEAR FAILED</div>
+                    <div class="result-message">
+                        ${error.message}<br>
+                        Check that the router and both edge nodes are running,
+                        and that their /cache/clear endpoints are present.
+                    </div>
+                `;
+                await checkAllServices();
+            } finally {
+                button.disabled = false;
+                button.textContent = "Clear All Caches";
+            }
+        }
+
+        checkAllServices();
+    </script>
+</body>
+</html>
