@@ -7,23 +7,21 @@ import os
 app = Flask(__name__)
 
 # Use the deployed origin URL on Render,
-# or localhost when running the project locally.
+# or localhost when running locally.
 ORIGIN_URL = os.environ.get(
     "ORIGIN_URL",
     "http://127.0.0.1:5000"
 ).rstrip("/")
 
-# Local cache stored inside this edge node
+# Edge Node 2 has its own independent cache
 cache = {}
-
-# Cached content expires after 60 seconds
 CACHE_TTL = 60
 
 
 @app.route("/")
 def home():
     return jsonify({
-        "service": "Edge Node 1",
+        "service": "Edge Node 2",
         "status": "online",
         "cached_items": len(cache)
     })
@@ -31,22 +29,18 @@ def home():
 
 @app.route("/content/<content_id>")
 def get_content(content_id):
-
-    # 1. Check whether valid content exists in the cache
     if content_id in cache:
         cached_data, cached_time = cache[content_id]
 
         if time.time() - cached_time < CACHE_TTL:
             return jsonify({
-                "edge_node": "Edge Node 1",
+                "edge_node": "Edge Node 2",
                 "cache_status": "HIT",
                 "data": cached_data
             })
 
-        # Remove expired content
         del cache[content_id]
 
-    # 2. Cache miss: fetch content from origin
     try:
         response = requests.get(
             f"{ORIGIN_URL}/api/content/{content_id}",
@@ -57,12 +51,10 @@ def get_content(content_id):
             return jsonify(response.json()), response.status_code
 
         origin_data = response.json()
-
-        # 3. Store the result locally with its timestamp
         cache[content_id] = (origin_data, time.time())
 
         return jsonify({
-            "edge_node": "Edge Node 1",
+            "edge_node": "Edge Node 2",
             "cache_status": "MISS",
             "data": origin_data
         })
@@ -79,12 +71,12 @@ def clear_cache():
     cache.clear()
 
     return jsonify({
-        "edge_node": "Edge Node 1",
+        "edge_node": "Edge Node 2",
         "message": "Cache cleared successfully",
         "cleared_items": cleared_items
     })
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))
+    port = int(os.environ.get("PORT", 5002))
     app.run(host="0.0.0.0", port=port, debug=False)
