@@ -1,13 +1,17 @@
-from flask_cors import CORS
+
 from flask import Flask, jsonify, render_template
+from flask_cors import CORS
 import requests
+import os
 
 app = Flask(__name__)
 CORS(app)
 
+# Use Render service URLs when deployed,
+# or local URLs when running on your computer.
 EDGE_NODES = [
-    "http://127.0.0.1:5001",
-    "http://127.0.0.1:5002"
+    os.environ.get("EDGE_NODE_1_URL", "http://127.0.0.1:5001").rstrip("/"),
+    os.environ.get("EDGE_NODE_2_URL", "http://127.0.0.1:5002").rstrip("/")
 ]
 
 next_node = 0
@@ -22,11 +26,9 @@ def home():
 def route_request(content_id):
     global next_node
 
-    # Start with the next node in round-robin order
     start_node = next_node
     next_node = (next_node + 1) % len(EDGE_NODES)
 
-    # Try both nodes, starting with the selected node
     for attempt in range(len(EDGE_NODES)):
         index = (start_node + attempt) % len(EDGE_NODES)
         node = EDGE_NODES[index]
@@ -34,10 +36,9 @@ def route_request(content_id):
         try:
             response = requests.get(
                 f"{node}/content/{content_id}",
-                timeout=3
+                timeout=5
             )
 
-            # Forward normal responses, including content-not-found errors
             return jsonify({
                 "router": "EdgeCache",
                 "selected_node": node,
@@ -46,7 +47,6 @@ def route_request(content_id):
             }), response.status_code
 
         except (requests.RequestException, ValueError):
-            # Try the next node if this node is unavailable
             continue
 
     return jsonify({
@@ -63,7 +63,7 @@ def clear_all_caches():
         try:
             response = requests.post(
                 f"{node}/cache/clear",
-                timeout=3
+                timeout=5
             )
 
             results.append({
@@ -91,5 +91,7 @@ def clear_all_caches():
         "results": results
     }), 200 if all_cleared else 503
 
+
 if __name__ == "__main__":
-    app.run(port=5003, debug=True)
+    port = int(os.environ.get("PORT", 5003))
+    app.run(host="0.0.0.0", port=port, debug=False)
