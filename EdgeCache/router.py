@@ -7,11 +7,20 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Use Render service URLs when deployed,
-# or local URLs when running on your computer.
+ORIGIN_URL = os.environ.get(
+    "ORIGIN_URL",
+    "http://127.0.0.1:5000"
+).rstrip("/")
+
 EDGE_NODES = [
-    os.environ.get("EDGE_NODE_1_URL", "http://127.0.0.1:5001").rstrip("/"),
-    os.environ.get("EDGE_NODE_2_URL", "http://127.0.0.1:5002").rstrip("/")
+    os.environ.get(
+        "EDGE_NODE_1_URL",
+        "http://127.0.0.1:5001"
+    ).rstrip("/"),
+    os.environ.get(
+        "EDGE_NODE_2_URL",
+        "http://127.0.0.1:5002"
+    ).rstrip("/")
 ]
 
 next_node = 0
@@ -20,6 +29,26 @@ next_node = 0
 @app.route("/")
 def home():
     return render_template("index.html")
+
+
+@app.route("/api/status")
+def api_status():
+    services = {
+        "origin": ORIGIN_URL,
+        "edge_node_1": EDGE_NODES[0],
+        "edge_node_2": EDGE_NODES[1]
+    }
+
+    status = {}
+
+    for name, url in services.items():
+        try:
+            response = requests.get(url, timeout=15)
+            status[name] = response.ok
+        except requests.RequestException:
+            status[name] = False
+
+    return jsonify(status)
 
 
 @app.route("/content/<content_id>")
@@ -36,7 +65,7 @@ def route_request(content_id):
         try:
             response = requests.get(
                 f"{node}/content/{content_id}",
-                timeout=5
+                timeout=30
             )
 
             return jsonify({
@@ -63,7 +92,7 @@ def clear_all_caches():
         try:
             response = requests.post(
                 f"{node}/cache/clear",
-                timeout=5
+                timeout=15
             )
 
             results.append({
