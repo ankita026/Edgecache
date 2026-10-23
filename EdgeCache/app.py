@@ -1,4 +1,6 @@
+
 from flask import Flask, jsonify
+import os
 
 app = Flask(__name__)
 
@@ -17,7 +19,7 @@ CONTENT = {
 @app.route("/")
 def home():
     return jsonify({
-        "project": "EdgeCache",
+        "service": "EdgeCache Origin",
         "status": "online"
     })
 
@@ -25,7 +27,9 @@ def home():
 @app.route("/api/content/<content_id>")
 def get_content(content_id):
     if content_id not in CONTENT:
-        return jsonify({"error": "Content not found"}), 404
+        return jsonify({
+            "error": "Content not found"
+        }), 404
 
     return jsonify({
         "source": "origin",
@@ -35,4 +39,5 @@ def get_content(content_id):
 
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
